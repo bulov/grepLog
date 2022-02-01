@@ -3,7 +3,7 @@
 DEST=/usr/local/bin
 PROG=$(basename $0)
 LogFile=${Logfile:-/var/log/$PROG.log}
-StrSearch=${StrSearch:ERROR/MainProcess}
+StrSearch=${StrSearch:-ERROR/MainProcess}
 
 ########################################################################
 help() {
