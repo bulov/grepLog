@@ -60,12 +60,10 @@ delete(){
    sudo rm /etc/systemd/system{$PROG.service,$PROG.timer}
 } ######################################################################
 testCreateLogFile(){
-sudo touch $LogFile
-sudo chmod 0666 $LogFile
-sudo  cat <<EndL >>$LogFile
+sudo  bash -c "cat <<EndL >>$LogFile
 Dec 27 00:01:30 ip-10-0-5-224 worker-tasks: [2019-12-27 00:01:30,710: ERROR/MainProcess] Error in timer: TimeoutError('Timeout reading from socket',)\nTraceback (most recent call last):\n
 EndL
-
+"
 } ######################################################################
 #
 # main
