@@ -5,6 +5,7 @@ LogFile=${LogFile:-/var/log/$PROG.log}
 StrSearch=${StrSearch:-"ERROR/MainProcess"}
 User=backend       #for test
 Job=worker-tasks
+Timer=5min
 ########################################################################
 help() {
 prog=$(basename $0)
@@ -43,8 +44,8 @@ EndL
 "
 sudo bash -c "cat <<EndL >/etc/systemd/system/$PROG.timer
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=5min
+OnBootSec=1min
+OnUnitActiveSec=$Timer
 EndL
 "
 sudo systemctl daemon-reload
@@ -70,9 +71,9 @@ EndL
 "
 } ######################################################################
 testCreateUserAndJob(){
-sudo adduser $User
-sudo usermod -aG wheel  $User
-sudo bash -c "echo \"$User ALL=(ALL)  NOPASSWD: ALL\"  > /etc/sudoers.d/$User"
+#sudo adduser $User
+#sudo usermod -aG wheel  $User
+#sudo bash -c "echo \"$User ALL=(ALL)  NOPASSWD: ALL\"  > /etc/sudoers.d/$User"
 sudo bash -c "cat <<EndL >/etc/systemd/system/$User@$Job.service
 [Unit]
 Description=worker-tasks
@@ -82,8 +83,7 @@ Type=forking
 WorkingDirectory=/tmp
 User=$User
 Group=wheel
-ExecStart=/usr/bin/echo  \"$Job start $(date)\" > $LogFile
-ExecReload=/usr/bin/echo \"$Job reload  $(date)\" > $LogFile
+ExecStart=/usr/local/bin/$Prog -j
 [Install]
 WantedBy=multi-user.target
 EndL
@@ -91,6 +91,12 @@ EndL
 sudo systemctl daemon-reload
 sudo systemctl enable $User@$Job.service
 sudo systemctl start  $User@$Job.service
+} ######################################################################
+testRestartJob(){
+sudo bash -c "cat << EndL  > $LogFile
+$(date) restart <<< $Job >>>
+EndL
+"
 } ######################################################################
 #
 # main
@@ -103,6 +109,7 @@ case $1 in
    -c) ConfigFile=$2 ;         shift ;;
    -t) testCreateLogFile;      exit  ;;
    -u) testCreateUserAndJob;   exit  ;;
+   -j) testRestartJob;         exit  ;;
    -h) help;                   exit  ;;
 esac
 
