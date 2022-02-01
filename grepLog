@@ -68,8 +68,8 @@ EndL
 testCreateUserAndJob(){
 sudo add user backend
 sudo usermod -aG wheel
-echo echo "'backend ALL=(ALL)  NOPASSWD: ALL' > /etc/sudoers.d/backend"
-sudo bash -c "cat <<EndL >/etc/systemd/system/$Job.service
+sudo bash -c "echo 'backend ALL=(ALL)  NOPASSWD: ALL' > /etc/sudoers.d/backend"
+sudo bash -c "cat <<EndL >/etc/systemd/system/$User@$Job.service
 [Unit]
 Description=worker-tasks
 After=syslog.target
