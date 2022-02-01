@@ -62,7 +62,7 @@ delete(){
 #   sudo systemctl stop     $User@$Job.service
 #   sudo systemctl disable  $User@$Job.service
 #   sudo rm /etc/systemd/system/$User@$Job.service
-#   sudo $LogFile
+#   sudo rm $LogFile
 } ######################################################################
 testCreateLogFile(){
 sudo bash -c  "cat <<EndL >>$LogFile
@@ -83,7 +83,7 @@ Type=forking
 WorkingDirectory=/tmp
 User=$User
 Group=wheel
-ExecStart=/usr/local/bin/$Prog -j
+ExecStart=/usr/local/bin/$PROG -j
 [Install]
 WantedBy=multi-user.target
 EndL
