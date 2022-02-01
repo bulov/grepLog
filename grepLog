@@ -53,11 +53,15 @@ sudo systemctl start  $PROG.service
 sudo systemctl start  $PROG.timer
 } ######################################################################
 delete(){
-   sudo systemctl stop $PROG.service
-   sudo systemctl stop $PROG.timer
-   sudo systemctl disable $PROG.service
-   sudo systemctl disable $PROG.timer
-   sudo rm /etc/systemd/system{$PROG.service,$PROG.timer}
+   sudo systemctl stop     $PROG.service
+   sudo systemctl stop     $PROG.timer
+   sudo systemctl disable  $PROG.service
+   sudo systemctl disable  $PROG.timer
+   sudo rm /etc/systemd/system/{$PROG.service,$PROG.timer}
+#   sudo systemctl stop     $User@$Job.service
+#   sudo systemctl disable  $User@$Job.service
+#   sudo rm /etc/systemd/system/$User@$Job.service
+#   sudo $LogFile
 } ######################################################################
 testCreateLogFile(){
 sudo bash -c  "cat <<EndL >>$LogFile
@@ -86,6 +90,7 @@ EndL
 "
 sudo systemctl daemon-reload
 sudo systemctl enable $User@$Job.service
+sudo systemctl start  $User@$Job.service
 } ######################################################################
 #
 # main
@@ -106,5 +111,5 @@ find=$( grep $StrSearch $LogFile )
 [ $? = 0 ] && job=$(echo $find  | awk -F: '{print $3 }' | awk -F' ' '{print $3 }')
 [ _"$job" != _ ] && {
    sudo mv $LogFile $LogFile.$(date +%Y-%m-%d_%H:%M:%S)
-   systemctl restart backend@${job}.service
+   sudo systemctl restart backend@${job}.service
 }
