@@ -1,10 +1,10 @@
 #!/bin/bash
-
 DEST=/usr/local/bin
 PROG=$(basename $0)
-LogFile=${Logfile:-/var/log/$PROG.log}
-StrSearch=${StrSearch:-ERROR/MainProcess}
-
+LogFile=${LogFile:-/var/log/$PROG.log}
+StrSearch=${StrSearch:-"ERROR/MainProcess"}
+User=backend       #for test
+Job=worker-tasks
 ########################################################################
 help() {
 prog=$(basename $0)
@@ -33,7 +33,7 @@ Type=forking
 WorkingDirectory=/tmp
 User=backend
 Group=wheel
-Environment=Logfile=$LogFile
+Environment=LogFile=$LogFile
 Environment=StrSearch=$StrSearch
 ExecStart=$DEST/$PROG
 [Install]
@@ -60,28 +60,52 @@ delete(){
    sudo rm /etc/systemd/system{$PROG.service,$PROG.timer}
 } ######################################################################
 testCreateLogFile(){
-sudo  bash -c "cat <<EndL >>$LogFile
+sudo bash -c  "cat <<EndL >>$LogFile
 Dec 27 00:01:30 ip-10-0-5-224 worker-tasks: [2019-12-27 00:01:30,710: ERROR/MainProcess] Error in timer: TimeoutError('Timeout reading from socket',)\nTraceback (most recent call last):\n
 EndL
 "
+} ######################################################################
+testCreateUserAndJob(){
+sudo add user backend
+sudo usermod -aG wheel
+echo echo "'backend ALL=(ALL)  NOPASSWD: ALL' > /etc/sudoers.d/backend"
+sudo bash -c "cat <<EndL >/etc/systemd/system/$Job.service
+[Unit]
+Description=worker-tasks
+After=syslog.target
+[Service]
+Type=forking
+WorkingDirectory=/tmp
+User=$User
+Group=wheel
+ExecStart=/usr/bin/echo  $Job start
+ExecReload=/usr/bin/echo $Job reload
+[Install]
+WantedBy=multi-user.target
+EndL
+"
+sudo systemctl daemon-reload
+sudo systemctl enable $Job.service
+sudo systemctl start  $Job.timer
 } ######################################################################
 #
 # main
 #
 case $1 in
-   -i) install ;          exit  ;;
-   -d) delete  ;          exit  ;;
-   -s) StrSearch=$2;      shift ;;
-   -l) LogFile=$2 ;       shift ;;
-   -c) ConfigFile=$2 ;    shift ;;
-   -t) testCreateLogFile; exit  ;;
-   -h) help;              exit  ;;
+   -i) install ;               exit  ;;
+   -d) delete  ;               exit  ;;
+   -s) StrSearch=$2;           shift ;;
+   -l) LogFile=$2 ;            shift ;;
+   -c) ConfigFile=$2 ;         shift ;;
+   -t) testCreateLogFile;      exit  ;;
+   -u) testCreateUserAndJob;   exit  ;;
+   -h) help;                   exit  ;;
 esac
 
-[ ! -f $Logfile ] &&  exit -1
-find=$( grep $StrSearch $Logfile )
+[ ! -f $LogFile ] &&  {  echo " No LogFile $LogFile" ;  exit -1 ; }
+find=$( grep $StrSearch $LogFile )
 [ $? = 0 ] && job=$(echo $find  | awk -F: '{print $3 }' | awk -F' ' '{print $3 }')
 [ _"$job" != _ ] && {
-   sudo mv $Logfile $Logfile.$(date +%Y-%m-%d_%H:%M:%S)
+   sudo mv $LogFile $LogFile.$(date +%Y-%m-%d_%H:%M:%S)
    systemctl restart backend@${job}.service
 }
