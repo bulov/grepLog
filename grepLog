@@ -1,0 +1,89 @@
+#!/bin/bash
+
+DEST=/usr/local/bin
+PROG=$(basename $0)
+LogFile=${Logfile:-/var/log/$PROG.log}
+StrSearch=${StrSearch:ERROR/MainProcess}
+
+########################################################################
+help() {
+prog=$(basename $0)
+echo "
+ Usage: $prog [-h] [-i ] [ -l /var/log/grepLog ] [ -s ERROR/MainProcess ] [ -c ./grepLog.cfg ]
+   -h - help
+   -l - log file
+   -s - string search
+   -c - config file
+   -i - install in /usr/local/bin /etc/systemd/system
+   -d - delete and disable
+"
+   exit 1
+} ######################################################################
+install(){
+
+sudo cp $PROG $DEST
+sudo chmod +x $DEST/$PROG
+
+cat <<EndL >$PROG.service
+[Unit]
+Description=$PROG
+After=syslog.target
+[Service]
+Type=forking
+WorkingDirectory=/tmp
+User=backend
+Group=wheel
+Environment=Logfile=$LogFile
+Environment=StrSearch=$StrSearch
+ExecStart=$DEST/$PROG
+[Install]
+WantedBy=multi-user.target
+WantedBy=timers.target
+EndL
+
+cat <<EndL >$PROG.timer
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+EndL
+
+sudo systemctl daemon-reload
+sudo systemctl enable $PROG.service
+sudo systemctl start  $PROG.service
+sudo systemctl start  $PROG.timer
+} ######################################################################
+delete(){
+   sudo systemctl stop $PROG.service
+   sudo systemctl stop $PROG.timer
+   sudo systemctl disable $PROG.service
+   sudo systemctl disable $PROG.timer
+   sudo rm /etc/systemd/system{$PROG.service,$PROG.timer}
+} ######################################################################
+testCreateLogFile(){
+sudo touch $LogFile
+sudo chmod 0666 $LogFile
+sudo  cat <<EndL >>$LogFile
+Dec 27 00:01:30 ip-10-0-5-224 worker-tasks: [2019-12-27 00:01:30,710: ERROR/MainProcess] Error in timer: TimeoutError('Timeout reading from socket',)\nTraceback (most recent call last):\n
+EndL
+
+} ######################################################################
+#
+# main
+#
+case $1 in
+   -i) install ;          exit  ;;
+   -d) delete  ;          exit  ;;
+   -s) StrSearch=$2;      shift ;;
+   -l) LogFile=$2 ;       shift ;;
+   -c) ConfigFile=$2 ;    shift ;;
+   -t) testCreateLogFile; exit  ;;
+   -h) help;              exit  ;;
+esac
+
+[ ! -f $StrSearch ] &&  exit -1
+find=$( grep $StrSearch $Logfile )
+[ $? = 0 ] && job=$(echo $find  | awk -F: '{print $3 }' | awk -F' ' '{print $3 }')
+[ _"$job" != _ ] && {
+   sudo mv $Logfile $Logfile.$(date +%Y-%m-%d_%H:%M:%S)
+   systemctl restart backend@${job}.service
+}
