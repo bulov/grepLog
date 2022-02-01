@@ -24,7 +24,7 @@ install(){
 sudo cp $PROG $DEST
 sudo chmod +x $DEST/$PROG
 
-cat <<EndL >$PROG.service
+cat <<EndL >/etc/systemd/system/$PROG.service
 [Unit]
 Description=$PROG
 After=syslog.target
@@ -41,7 +41,7 @@ WantedBy=multi-user.target
 WantedBy=timers.target
 EndL
 
-cat <<EndL >$PROG.timer
+cat <<EndL >/etc/systemd/system/$PROG.timer
 [Timer]
 OnBootSec=5min
 OnUnitActiveSec=5min
