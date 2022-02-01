@@ -78,7 +78,7 @@ case $1 in
    -h) help;              exit  ;;
 esac
 
-[ ! -f $StrSearch ] &&  exit -1
+[ ! -f $Logfile ] &&  exit -1
 find=$( grep $StrSearch $Logfile )
 [ $? = 0 ] && job=$(echo $find  | awk -F: '{print $3 }' | awk -F' ' '{print $3 }')
 [ _"$job" != _ ] && {
