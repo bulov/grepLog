@@ -11,12 +11,14 @@ help() {
 prog=$(basename $0)
 echo "
  Usage: $prog [-h] [-i ] [ -l /var/log/grepLog ] [ -s ERROR/MainProcess ] [ -c ./grepLog.cfg ]
-   -h - help
-   -l - log file
-   -s - string search
+   -h|--help      - help
+   -l|--LogFile   - log file
+   -s|--StrSearch - string search
+   -i|--install   - - install in /usr/local/bin /etc/systemd/system
    -c - config file
-   -i - install in /usr/local/bin /etc/systemd/system
    -d - delete and disable
+ Example
+   $prog --LogFile /tmp/grepLog --StrSearch \"ERROR xxx\"
 "
    exit 1
 } ######################################################################
@@ -101,20 +103,22 @@ EndL
 #
 # main
 #
-case $1 in
-   -i) install ;               exit  ;;
-   -d) delete  ;               exit  ;;
-   -s) StrSearch=$2;           shift ;;
-   -l) LogFile=$2 ;            shift ;;
-   -c) ConfigFile=$2 ;         shift ;;
-   -t) testCreateLogFile;      exit  ;;
-   -u) testCreateUserAndJob;   exit  ;;
-   -j) testRestartJob;         exit  ;;
-   -h) help;                   exit  ;;
-esac
+for i in $@ ; do
+   case $1 in
+      -h|--help)      help;                exit  ;;
+      -i|--install)   install ;            exit  ;;
+      -l)--LogFile)   LogFile=$2 ;         shift ;;
+      -s|--StrSearch) StrSearch="$2";      shift ;;
+      -d) delete  ;                        exit  ;;
+      -c) ConfigFile=$2 ;                  shift ;;
+      -t) testCreateLogFile;               exit  ;;
+      -u) testCreateUserAndJob;            exit  ;;
+      -j) testRestartJob;                  exit  ;;
+   esac
+done
 
 [ ! -f $LogFile ] &&  {  echo " No LogFile $LogFile" ;  exit -1 ; }
-find=$( grep $StrSearch $LogFile )
+find=$( grep "$StrSearch" $LogFile )
 [ $? = 0 ] && job=$(echo $find  | awk -F: '{print $3 }' | awk -F' ' '{print $3 }')
 [ _"$job" != _ ] && {
    sudo mv $LogFile $LogFile.$(date +%Y-%m-%d_%H:%M:%S)

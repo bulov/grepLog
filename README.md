@@ -2,7 +2,7 @@
 
 git clone -b main https://github.com/bulov/grepLog
 cd grepLog
-./grepLog -i   # install
+./grepLog --install   # install
 
 if need for test Create
 ./grepLog -u   # add user backend and worker-tasks.service
