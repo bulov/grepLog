@@ -3,9 +3,10 @@ DEST=/usr/local/bin
 PROG=$(basename $0)
 LogFile=${LogFile:-/var/log/$PROG.log}
 StrSearch=${StrSearch:-"ERROR/MainProcess"}
-User=backend       #for test
 Job=worker-tasks
 Timer=5min
+#for test
+User=backend
 ########################################################################
 help() {
 prog=$(basename $0)
@@ -34,7 +35,7 @@ After=syslog.target
 [Service]
 Type=forking
 WorkingDirectory=/tmp
-User=backend
+User=$User
 Group=wheel
 Environment=LogFile=$LogFile
 Environment=StrSearch=$StrSearch
@@ -106,8 +107,8 @@ EndL
 for i in $@ ; do
    case $1 in
       -h|--help)      help;                exit  ;;
-      -i|--install)   install ;            exit  ;;
-      -l)--LogFile)   LogFile=$2 ;         shift ;;
+      -i|--install)   install;             exit  ;;
+      -l)--LogFile)   LogFile=$2;          shift ;;
       -s|--StrSearch) StrSearch="$2";      shift ;;
       -d) delete  ;                        exit  ;;
       -c) ConfigFile=$2 ;                  shift ;;
@@ -122,5 +123,5 @@ find=$( grep "$StrSearch" $LogFile )
 [ $? = 0 ] && job=$(echo $find  | awk -F: '{print $3 }' | awk -F' ' '{print $3 }')
 [ _"$job" != _ ] && {
    sudo mv $LogFile $LogFile.$(date +%Y-%m-%d_%H:%M:%S)
-   sudo systemctl restart backend@${job}.service
+   sudo systemctl restart $User@${job}.service
 }
