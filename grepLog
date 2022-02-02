@@ -15,7 +15,7 @@ echo "
    -h|--help      - help
    -l|--LogFile   - log file
    -s|--StrSearch - string search
-   -i|--install   - - install in /usr/local/bin /etc/systemd/system
+   -i|--install   - install in /usr/local/bin /etc/systemd/system
    -c - config file
    -d - delete and disable
  Example
